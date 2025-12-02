@@ -1,0 +1,8 @@
+{
+  "AppName": "SpaceShooter",
+  "WinWidth": 1920,
+  "WinHeight": 1080,
+  "FullScreen": false,
+  "TexturePath": "../../Assets/Images",
+  "SoundPath": "../../Assets/Sounds"
+}
