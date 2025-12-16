@@ -18,6 +18,11 @@ public:
 	void ObtainAllWalkableTiles(std::vector<Tile*>& outWalkableTiles);
 	bool HasCollision(const X::Math::Rect& objRect, const X::Math::Vector2& maxDisplacement, X::Math::Vector2& outDisplacement) const;
 
+	// Destructible tile methods
+	void DamageDestructibleTiles(const X::Math::Rect& attackRect, int damage = 1);
+	void DamageDestructibleTilesAtPosition(const X::Math::Vector2& position, int damage = 1);
+	const std::vector<Tile*>& GetTiles() const { return mTiles; }
+
 private:
 	TileMap();
 	static TileMap* mInstance;

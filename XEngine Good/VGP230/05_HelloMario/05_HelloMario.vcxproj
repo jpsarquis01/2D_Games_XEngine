@@ -140,10 +140,12 @@
     <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyManager.cpp" />
+    <ClCompile Include="FSMController.cpp" />
     <ClCompile Include="GameController.cpp" />
     <ClCompile Include="Pickup.cpp" />
     <ClCompile Include="PickupManager.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Proyectile.cpp" />
     <ClCompile Include="States.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileMap.cpp" />
@@ -156,10 +158,12 @@
     <ClInclude Include="EnemyManager.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Enum.h" />
+    <ClInclude Include="FSMController.h" />
     <ClInclude Include="GameController.h" />
     <ClInclude Include="Pickup.h" />
     <ClInclude Include="PickupManager.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Proyectile.h" />
     <ClInclude Include="States.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileMap.h" />

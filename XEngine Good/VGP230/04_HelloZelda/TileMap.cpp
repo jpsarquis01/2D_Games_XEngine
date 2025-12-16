@@ -180,3 +180,35 @@ void TileMap::ReloadMap()
 		++tileIndex;
 	}
 }
+
+void TileMap::DamageDestructibleTiles(const X::Math::Rect& attackRect, int damage)
+{
+	for (Tile* tile : mTiles)
+	{
+		if (tile->IsDestructible() && !tile->IsDestroyed())
+		{
+			if (X::Math::Intersect(tile->GetRect(), attackRect))
+			{
+				tile->TakeDamage(damage);
+			}
+		}
+	}
+}
+
+void TileMap::DamageDestructibleTilesAtPosition(const X::Math::Vector2& position, int damage)
+{
+	for (Tile* tile : mTiles)
+	{
+		if (tile->IsDestructible() && !tile->IsDestroyed())
+		{
+			// Check if the position is within the tile
+			const X::Math::Rect& tileRect = tile->GetRect();
+			if (position.x >= tileRect.left && position.x <= tileRect.right &&
+				position.y >= tileRect.top && position.y <= tileRect.bottom)
+			{
+				tile->TakeDamage(damage);
+				break; // Only damage one tile
+			}
+		}
+	}
+}

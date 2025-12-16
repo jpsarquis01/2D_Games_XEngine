@@ -31,6 +31,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "04_HelloZelda", "VGP230\04_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "05_HelloMario", "VGP230\05_HelloMario\05_HelloMario.vcxproj", "{371600CD-FF65-4207-B7E2-2C5AEBE8B4C2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NamelessVigilante_FinalProject", "NamelessVigilante_FinalProject\NamelessVigilante_FinalProject.vcxproj", "{D9B9E77A-D921-4308-8D72-1BC302F441FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -127,6 +129,14 @@ Global
 		{371600CD-FF65-4207-B7E2-2C5AEBE8B4C2}.Release|x64.Build.0 = Release|x64
 		{371600CD-FF65-4207-B7E2-2C5AEBE8B4C2}.Release|x86.ActiveCfg = Release|Win32
 		{371600CD-FF65-4207-B7E2-2C5AEBE8B4C2}.Release|x86.Build.0 = Release|Win32
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Debug|x64.ActiveCfg = Debug|x64
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Debug|x64.Build.0 = Debug|x64
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Debug|x86.ActiveCfg = Debug|Win32
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Debug|x86.Build.0 = Debug|Win32
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Release|x64.ActiveCfg = Release|x64
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Release|x64.Build.0 = Release|x64
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Release|x86.ActiveCfg = Release|Win32
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -143,6 +153,7 @@ Global
 		{292861DD-3565-4FEF-BE50-809913D3C6A9} = {6D1776DF-CA8F-46C8-A402-BD2CFFEB01BD}
 		{075BC54C-CF27-45BA-9813-2675ECB48372} = {6D1776DF-CA8F-46C8-A402-BD2CFFEB01BD}
 		{371600CD-FF65-4207-B7E2-2C5AEBE8B4C2} = {6D1776DF-CA8F-46C8-A402-BD2CFFEB01BD}
+		{D9B9E77A-D921-4308-8D72-1BC302F441FF} = {6D1776DF-CA8F-46C8-A402-BD2CFFEB01BD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2D84BED7-7031-4090-B4D3-57A9E4C0998B}

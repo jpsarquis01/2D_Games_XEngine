@@ -8,12 +8,17 @@ Enemy::Enemy()
 	: Entity()
 	, Collidable()
 	, mImageId(0)
+	, mBossImageId(0)
 	, mPosition(0.0f, 0.0f)
 	, mCenterPoint(0.0f, 0.0f)
 	, mTargetPoint(0.0f, 0.0f)
 	, mHealth(0)
 	, mTargetPointUpdate(0.0f)
 	, mRemoveCollider(false)
+	, mKnockbackVelocity(0.0f, 0.0f)
+	, mKnockbackDuration(0.0f)
+	, mIsBoss(false)
+	, mPlayerPosition(0.0f, 0.0f)
 {
 }
 
@@ -23,10 +28,12 @@ Enemy::~Enemy()
 
 void Enemy::Load()
 {
-	mImageId = X::LoadTexture("mushroom.png");
+	mImageId = X::LoadTexture("Enemy.png");
+	mBossImageId = X::LoadTexture("Boss.jpg"); 
 	mTargetPointUpdate = 0.0f;
 	mHealth = -1;
-	mRemoveCollider = false;     
+	mRemoveCollider = false;
+	mIsBoss = false;
 
 	float halfWidth = X::GetSpriteWidth(mImageId) * 0.5f;
 	float halfHeight = X::GetSpriteHeight(mImageId) * 0.5f;
@@ -49,30 +56,80 @@ void Enemy::Update(float deltaTime)
 		return;
 	}
 
-	const float speed = 70.0f;
-	const float offsetDistance = 200.0f;
-	mTargetPointUpdate -= deltaTime;
-
-	if(mTargetPointUpdate <= 0.0f || X::Math::Vector2::SqrMagnitude(mTargetPoint - mPosition) <= 100.0f)
+	// Handle knockback with wall collision and tile breaking
+	if (mKnockbackDuration > 0.0f)
 	{
-		mTargetPoint = mCenterPoint + (X::RandomUnitCircle() * offsetDistance);
-		mTargetPointUpdate = X::RandomFloat(2.0f, 5.0f);
+		mKnockbackDuration -= deltaTime;
+		
+		X::Math::Vector2 displacement = mKnockbackVelocity * deltaTime;
+		X::Math::Vector2 maxDisplacement = displacement;
+		X::Math::Rect currentRect = mEnemyRect;
+		currentRect.min += mPosition;
+		currentRect.max += mPosition;
+		
+		// Check for wall collision during knockback
+		if (TileMap::Get()->HasCollision(currentRect, maxDisplacement, displacement))
+		{
+			// Hit a wall, try to break destructible tiles
+			X::Math::Vector2 impactPosition = mPosition + X::Math::Normalize(mKnockbackVelocity) * 32.0f;
+			TileMap::Get()->DamageDestructibleTilesAtPosition(impactPosition, 1);
+			
+			// Stop knockback
+			mPosition += displacement;
+			mKnockbackDuration = 0.0f;
+			mKnockbackVelocity = X::Math::Vector2::Zero();
+		}
+		else
+		{
+			mPosition += displacement;
+		}
+		
+		currentRect = mEnemyRect;
+		currentRect.min += mPosition;
+		currentRect.max += mPosition;
+		SetRect(currentRect);
+		return;
 	}
 
-	X::Math::Vector2 direction = X::Math::Normalize(mTargetPoint - mPosition);
-	if(X::Math::Vector2::SqrMagnitude(direction) > 0.0f)
+	// Movement speed - boss is faster
+	float speed = mIsBoss ? 100.0f : 70.0f;
+	mTargetPointUpdate -= deltaTime;
+
+	// Update target point to chase player
+	if(mTargetPointUpdate <= 0.0f)
 	{
+		// Chase the player directly
+		mTargetPoint = mPlayerPosition;
+		mTargetPointUpdate = CHASE_UPDATE_RATE;
+	}
+
+	// Move towards target (player position)
+	X::Math::Vector2 direction = mTargetPoint - mPosition;
+	float distanceToTarget = X::Math::Magnitude(direction);
+	
+	// Only move if not too close to target
+	if(distanceToTarget > 5.0f)
+	{
+		direction = X::Math::Normalize(direction);
 		X::Math::Vector2 displacement = direction * speed * deltaTime;
 		X::Math::Vector2 maxDisplacement = displacement;
 		X::Math::Rect currentRect = mEnemyRect;
 		currentRect.min += mPosition;
 		currentRect.max += mPosition;
+		
 		if (TileMap::Get()->HasCollision(currentRect, maxDisplacement, displacement))
 		{
-			// hit wall
+			// Hit wall during normal movement - damage destructible tiles occasionally
+			if (X::RandomFloat(0.0f, 1.0f) < 0.1f) // 10% chance per frame when hitting wall
+			{
+				X::Math::Vector2 impactPosition = mPosition + direction * 32.0f;
+				TileMap::Get()->DamageDestructibleTilesAtPosition(impactPosition, 1);
+			}
+			
 			mPosition += displacement;
 			if (X::Math::Vector2::SqrMagnitude(displacement) <= 10.01f)
 			{
+				// If stuck, update target sooner
 				mTargetPointUpdate = 0.0f;
 			}
 		}
@@ -80,6 +137,7 @@ void Enemy::Update(float deltaTime)
 		{
 			mPosition += displacement;
 		}
+		
 		currentRect = mEnemyRect;
 		currentRect.min += mPosition;
 		currentRect.max += mPosition;
@@ -91,7 +149,16 @@ void Enemy::Render()
 {
 	if (IsActive())
 	{
-		X::DrawSprite(mImageId, mPosition);
+		X::TextureId texToUse = mIsBoss ? mBossImageId : mImageId;
+		X::DrawSprite(texToUse, mPosition);
+		
+		// Show boss health
+		if (mIsBoss)
+		{
+			char healthText[32];
+			sprintf_s(healthText, "BOSS HP: %d", mHealth);
+			X::DrawScreenText(healthText, mPosition.x - 40.0f, mPosition.y - 50.0f, 16.0f, X::Colors::Red);
+		}
 	}
 }
 
@@ -113,16 +180,19 @@ void Enemy::OnCollision(Collidable* collidable)
 
 	if (collidable->GetType() == ET_PLAYER)
 	{
-		mHealth -= 10;
-		if (mHealth <= 0)
+		if (!mIsBoss)
 		{
-			mHealth = 0;
-			mRemoveCollider = true;
+			mHealth -= 10;
+			if (mHealth <= 0)
+			{
+				mHealth = 0;
+				mRemoveCollider = true;
+			}
 		}
 	}
 
 	// Bullet hitting enemy
-	if (collidable->GetType() == ET_BULLET)  
+	if (collidable->GetType() == ET_BULLET)
 	{
 		mHealth -= 25;
 		if (mHealth <= 0)
@@ -143,15 +213,26 @@ bool Enemy::IsActive() const
 	return mHealth > 0;
 }
 
-void Enemy::SetActive(const X::Math::Vector2& position, int health)
+void Enemy::SetActive(const X::Math::Vector2& position, int health, bool isBoss)
 {
 	mPosition = position;
 	mHealth = health;
 	mCenterPoint = position;
 	mTargetPointUpdate = 0.0f;
-	mTargetPoint = position;  
+	mTargetPoint = position;
+	mIsBoss = isBoss;
+	mKnockbackDuration = 0.0f;
+	mKnockbackVelocity = X::Math::Vector2::Zero();
 
 	X::Math::Rect CurrentRect = mEnemyRect;
+	if (mIsBoss)
+	{
+		// Make boss bigger
+		CurrentRect.left *= 2.0f;
+		CurrentRect.right *= 2.0f;
+		CurrentRect.top *= 2.0f;
+		CurrentRect.bottom *= 2.0f;
+	}
 	CurrentRect.min += mPosition;
 	CurrentRect.max += mPosition;
 	SetRect(CurrentRect);
@@ -159,4 +240,26 @@ void Enemy::SetActive(const X::Math::Vector2& position, int health)
 
 	CollisionManager::Get()->AddCollidable(this);
 	mRemoveCollider = false;
+}
+
+void Enemy::ApplyKnockback(const X::Math::Vector2& direction, float force)
+{
+	if (!mIsBoss) // Boss is immune to knockback
+	{
+		mKnockbackVelocity = direction * force;
+		mKnockbackDuration = 0.3f;
+	}
+	
+	// Deal damage
+	mHealth -= 15;
+	if (mHealth <= 0)
+	{
+		mHealth = 0;
+		mRemoveCollider = true;
+	}
+}
+
+void Enemy::SetPlayerTarget(const X::Math::Vector2& playerPosition)
+{
+	mPlayerPosition = playerPosition;
 }

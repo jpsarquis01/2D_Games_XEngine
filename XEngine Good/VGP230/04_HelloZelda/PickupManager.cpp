@@ -6,6 +6,8 @@ PickupManager* PickupManager::mInstance = nullptr;
 PickupManager::PickupManager()
 	: Entity()
 	, mNextAvailablePickup(0)
+	, mSpawnTimer(0.0f)
+	, mNextSpawnTime(0.0f)
 {
 }
 
@@ -34,13 +36,25 @@ void PickupManager::Load()
 	}
 
 	mNextAvailablePickup = 0;
+	
+	// Initialize random spawn timer
+	mSpawnTimer = 0.0f;
+	mNextSpawnTime = X::RandomFloat(MIN_SPAWN_TIME, MAX_SPAWN_TIME);
 }
 
 void PickupManager::Update(float deltaTime)
 {
-	if (X::IsKeyPressed(X::Keys::RSHIFT))
+	// Random ammo spawning system
+	mSpawnTimer += deltaTime;
+	if (mSpawnTimer >= mNextSpawnTime)
 	{
-		SpawnPickup(10);
+		// Spawn 1-3 ammo pickups randomly
+		int ammoCount = X::Random(1, 3);
+		SpawnPickup(ammoCount, PT_AMMO);
+		
+		// Reset timer with new random interval
+		mSpawnTimer = 0.0f;
+		mNextSpawnTime = X::RandomFloat(MIN_SPAWN_TIME, MAX_SPAWN_TIME);
 	}
 
 	for (Pickup* pickup : mPickups)
@@ -69,7 +83,7 @@ void PickupManager::Unload()
 	mPickups.clear();
 }
 
-void PickupManager::SpawnPickup(int count)
+void PickupManager::SpawnPickup(int amount, PickupType type)
 {
 	std::vector<Tile*> walkableTiles;
 	TileMap::Get()->ObtainAllWalkableTiles(walkableTiles);
@@ -96,7 +110,7 @@ void PickupManager::SpawnPickup(int count)
 	}
 	int prevUsedIndex = 0;
 
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < amount; i++)
 	{
 		prevUsedIndex = mNextAvailablePickup - 1;
 		if (prevUsedIndex < 0)
@@ -113,7 +127,7 @@ void PickupManager::SpawnPickup(int count)
 			{
 				int randIndex = X::Random(0, walkableTiles.size() - 1);
 				Tile* randomTile = walkableTiles[randIndex];
-				pickup->SetActive(randomTile->GetPosition());
+				pickup->SetActive(randomTile->GetPosition(), type);
 
 				if (randIndex < walkableTiles.size() - 1)
 				{

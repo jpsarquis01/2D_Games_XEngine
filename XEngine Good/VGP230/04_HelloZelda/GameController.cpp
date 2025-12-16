@@ -34,6 +34,9 @@ void GameController::Load()
     EnemyManager::Get()->Load();
     mBulletPool.Load();
     mPlayer.Load();
+    
+    // Spawn initial gun pickup
+    PickupManager::Get()->SpawnPickup(1, PT_GUN);
 }
 
 void GameController::Update(float deltaTime)
@@ -46,7 +49,18 @@ void GameController::Update(float deltaTime)
     TileMap::Get()->Update(deltaTime);
     mPlayer.Update(deltaTime);
 
-    HandleShooting(deltaTime);
+    // Update enemies with player position so they can chase
+    EnemyManager::Get()->UpdatePlayerPosition(mPlayer.GetPosition());
+
+    // Handle weapon-specific actions
+    if (mPlayer.GetCurrentWeapon() == WT_GUN)
+    {
+        HandleShooting(deltaTime);
+    }
+    else if (mPlayer.GetCurrentWeapon() == WT_PUNCH)
+    {
+        HandlePunch(deltaTime);
+    }
 
     mBulletPool.Update(deltaTime);
     EnemyManager::Get()->Update(deltaTime);
@@ -64,7 +78,7 @@ void GameController::Render()
 
     CollisionManager::Get()->Render();
 
-    // --- HUD: Ammo and Health bottom-right ---
+    // --- HUD: Weapon, Ammo and Health ---
     const int screenWidth = X::GetScreenWidth();
     const int screenHeight = X::GetScreenHeight();
 
@@ -73,18 +87,39 @@ void GameController::Render()
     sprintf_s(healthText, "Health: %d", mPlayer.GetHealth());
 
     float healthPosX = static_cast<float>(screenWidth) - 150.0f;
-    float healthPosY = static_cast<float>(screenHeight) - 60.0f; 
+    float healthPosY = static_cast<float>(screenHeight) - 80.0f; 
 
     X::DrawScreenText(healthText, healthPosX, healthPosY, 20.0f, X::Colors::Red);
 
-    // Ammo counter
-    char ammoText[64];
-    sprintf_s(ammoText, "Ammo: %d", mPlayer.GetAmmo());
+    // Current weapon
+    char weaponText[64];
+    if (mPlayer.GetCurrentWeapon() == WT_PUNCH)
+    {
+        sprintf_s(weaponText, "Weapon: PUNCH");
+    }
+    else
+    {
+        sprintf_s(weaponText, "Weapon: GUN");
+    }
+    
+    float weaponPosX = static_cast<float>(screenWidth) - 150.0f;
+    float weaponPosY = static_cast<float>(screenHeight) - 50.0f;
+    X::DrawScreenText(weaponText, weaponPosX, weaponPosY, 20.0f, X::Colors::Yellow);
 
-    float ammoPosX = static_cast<float>(screenWidth) - 150.0f;
-    float ammoPosY = static_cast<float>(screenHeight) - 30.0f;
+    // Ammo counter (only for gun)
+    if (mPlayer.GetCurrentWeapon() == WT_GUN)
+    {
+        char ammoText[64];
+        sprintf_s(ammoText, "Ammo: %d", mPlayer.GetAmmo());
 
-    X::DrawScreenText(ammoText, ammoPosX, ammoPosY, 20.0f, X::Colors::White);
+        float ammoPosX = static_cast<float>(screenWidth) - 150.0f;
+        float ammoPosY = static_cast<float>(screenHeight) - 20.0f;
+
+        X::DrawScreenText(ammoText, ammoPosX, ammoPosY, 20.0f, X::Colors::White);
+    }
+    
+    // Controls hint
+    X::DrawScreenText("1: Punch | 2: Gun | LMB: Attack", 10.0f, static_cast<float>(screenHeight) - 30.0f, 16.0f, X::Colors::White);
 }
 
 void GameController::Unload()
@@ -124,6 +159,45 @@ void GameController::HandleShooting(float deltaTime)
     {
         bullet->SetActive(playerPos, rotation, 2.0f); // 2 seconds lifetime
         mPlayer.ConsumeAmmo();
-
     }
+}
+
+void GameController::HandlePunch(float deltaTime)
+{
+    if (!X::IsMousePressed(X::Mouse::LBUTTON))
+        return;
+    
+    mPlayer.PerformPunch();
+    
+    if (!mPlayer.IsPunching())
+        return;
+    
+    // Check punch collision with enemies
+    const X::Math::Rect& punchRect = mPlayer.GetPunchRect();
+    const std::vector<Enemy*>& enemies = EnemyManager::Get()->GetEnemies();
+    
+	// Knockback for enemies
+    for (Enemy* enemy : enemies)
+    {
+        if (enemy->IsActive() && X::Math::Intersect(punchRect, enemy->GetRect()))
+        {
+            // Calculate knockback direction
+            X::Math::Vector2 knockbackDir;
+            knockbackDir.x = cosf(mPlayer.GetPunchDirection());
+            knockbackDir.y = sinf(mPlayer.GetPunchDirection());
+            enemy->ApplyKnockback(knockbackDir, 400.0f); // 400 = force multiplier
+        }
+    }
+    
+    // Check punch collision with destructible tiles
+    CheckDestructibleTiles();
+}
+
+void GameController::CheckDestructibleTiles()
+{
+    if (!mPlayer.IsPunching())
+        return;
+        
+    const X::Math::Rect& punchRect = mPlayer.GetPunchRect();
+    TileMap::Get()->DamageDestructibleTiles(punchRect, 1); // Player does 1 damage per punch
 }

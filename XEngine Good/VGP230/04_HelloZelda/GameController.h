@@ -14,12 +14,17 @@ public:
     void Update(float deltaTime) override;
     void Render() override;
     void Unload() override;
+    
+    // Get player reference
+    Player& GetPlayer() { return mPlayer; }
 
 private:
     GameController();
     static GameController* mInstance;
 
     void HandleShooting(float deltaTime);
+    void HandlePunch(float deltaTime);
+    void CheckDestructibleTiles();
 
     Player mPlayer;
     BulletPool  mBulletPool;

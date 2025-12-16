@@ -12,7 +12,7 @@ public:
 	void Render() override;
 	void Unload() override;
 
-	void SpawnPickup(int count);
+	void SpawnPickup(int amount, PickupType type = PT_AMMO);
 
 private:
 	PickupManager();
@@ -20,4 +20,10 @@ private:
 
 	std::vector<Pickup*> mPickups;
 	int mNextAvailablePickup;
+	
+	// Random spawn system
+	float mSpawnTimer;
+	float mNextSpawnTime;
+	const float MIN_SPAWN_TIME = 5.0f;  // Minimum seconds between spawns
+	const float MAX_SPAWN_TIME = 15.0f; // Maximum seconds between spawns
 };
